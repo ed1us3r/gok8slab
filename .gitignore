@@ -18,6 +18,9 @@
 # vendor/
 
 gok8slab
+gok8slab-repo/*
+gok8slab-repo
+
 
 # Go workspace file
 go.work
