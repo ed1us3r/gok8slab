@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/spf13/viper"
-	"log"
+	"fmt"
 )
 
 func LoadConfig() {
@@ -11,7 +11,7 @@ func LoadConfig() {
 	viper.AddConfigPath("$HOME/.gok8slab")
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Println("No config file found. Using defaults.")
+		fmt.Errorf("❌No config file found. Using defaults.: %v", err)
 	}
 }
 
