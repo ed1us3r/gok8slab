@@ -20,7 +20,7 @@ if [[ "$1" == "--install" ]]; then
 fi
 
 # Fetch the latest release version
-tarball_url=$(curl -s $LATEST_RELEASE_URL | grep "browser_download_url" | grep "linux-$ARCH.tar.gz" | cut -d '"' -f 4)
+tarball_url=$(curl -s $LATEST_RELEASE_URL | grep "browser_download_url" | grep "linux-$ARCH.tar.gz" | grep -v "md5" | cut -d '"' -f 4)
 
 if [[ -z "$tarball_url" ]]; then
     echo "Failed to fetch the latest release tarball. Exiting."
@@ -61,7 +61,7 @@ if $INSTALL; then
 fi
 
 # Ask for user permission
-echo "This script will create a directory called '$DIRECTORY' and download the latest source code. Continue? "
+echo "This script will create a directory called '$DIRECTORY' and download the latest source code."
 
 # Create the directory
 mkdir -p "$DIRECTORY"
