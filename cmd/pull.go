@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"fmt"
-
 	"gok8slab/internal/git"
+	"gok8slab/internal/utils"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var pullCmd = &cobra.Command{
@@ -13,22 +13,27 @@ var pullCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var repoURL string
-
 		if len(args) == 1 {
-			repoURL = args[0] // Use provided GitHub repo
+			repoURL = args[0]
 		} else {
-			repoURL = "" // Use default repo (gok8slab)
+			repoURL = ""
 		}
 
-		fmt.Println("Pulling courses from:", repoURL)
+		utils.Info("Pulling courses from: " + repoURL)
 
-		err := git.PullCourses(repoURL, "courses")
-		if err != nil {
-			fmt.Println("❌ Error pulling courses:", err)
+		// Check if dry-run mode is enabled
+		if viper.GetBool("dry-run") {
+			utils.Warning("Dry run mode enabled. No changes will be made.")
 			return
 		}
 
-		fmt.Println("✅ Courses updated successfully!")
+		err := git.PullCourses(repoURL, "courses")
+		if err != nil {
+			utils.Error("Error pulling courses: " + err.Error())
+			return
+		}
+
+		utils.Success("Courses updated successfully!")
 	},
 }
 

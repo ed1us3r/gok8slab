@@ -5,29 +5,39 @@ import (
 	"os/exec"
 
 	"gok8slab/internal/course"
-	"github.com/sirupsen/logrus"
+	"gok8slab/internal/utils"
+	"github.com/spf13/viper"
 )
 
 func DeployCourse(c *course.Course, isOpenShift bool) error {
-	var cmd *exec.Cmd
+	if viper.GetBool("dry-run") {
+		utils.Warning("Dry run mode enabled. No resources will be created.")
+		fmt.Println("Would apply the following manifests:")
+		for _, manifest := range c.Manifests {
+			fmt.Println(" - " + manifest)
+		}
+		return nil
+	}
 
 	for _, manifest := range c.Manifests {
 		manifestPath := fmt.Sprintf("courses/%s", manifest)
+		var cmd *exec.Cmd
 
 		if isOpenShift {
-			logrus.Info("Using OpenShift client (oc apply)")
+			utils.Info("Using OpenShift client (oc apply)")
 			cmd = exec.Command("oc", "apply", "-f", manifestPath, "-n", c.Namespace)
 		} else {
-			logrus.Info("Using Kubernetes client (kubectl apply)")
+			utils.Info("Using Kubernetes client (kubectl apply)")
 			cmd = exec.Command("kubectl", "apply", "-f", manifestPath, "-n", c.Namespace)
 		}
 
 		output, err := cmd.CombinedOutput()
 		if err != nil {
-			logrus.Error("Deployment failed:", err)
+			utils.Error("Deployment failed: " + err.Error())
 			return err
 		}
-		logrus.Debug(string(output))
+		utils.Success("Deployment successful: " + manifest)
+		fmt.Printf("%s\n", output)
 	}
 
 	return nil

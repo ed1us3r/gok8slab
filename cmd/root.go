@@ -1,8 +1,7 @@
 package cmd
 
 import (
-	"os/exec"
-
+	"os/exec" 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/sirupsen/logrus"
@@ -14,7 +13,7 @@ var rootCmd = &cobra.Command{
 	Long: `A CLI tool to set up Kubernetes CTF-style challenges.
 It deploys lessons to a Kubernetes or OpenShift cluster and cleans up after completion.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		// Set log level based on flag
+		// Set log level based on flags
 		if debug, _ := cmd.Flags().GetBool("debug"); debug {
 			logrus.SetLevel(logrus.DebugLevel)
 			logrus.Debug("Debug mode enabled")
@@ -47,6 +46,8 @@ func init() {
 	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
 	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
 	viper.BindPFlag("openshift", rootCmd.PersistentFlags().Lookup("openshift"))
+	rootCmd.PersistentFlags().Bool("dry-run", false, "Simulate actions without making changes")
+	viper.BindPFlag("dry-run", rootCmd.PersistentFlags().Lookup("dry-run"))
 }
 
 // Detect OpenShift by checking if the "oc" command exists
