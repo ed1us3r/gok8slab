@@ -61,13 +61,7 @@ if $INSTALL; then
 fi
 
 # Ask for user permission
-echo "This script will create a directory called '$DIRECTORY' and download the latest source code. Continue? (y/n)"
-read -r RESPONSE
-
-if [[ "$RESPONSE" != "y" ]]; then
-    echo "Operation canceled."
-    exit 1
-fi
+echo "This script will create a directory called '$DIRECTORY' and download the latest source code. Continue? "
 
 # Create the directory
 mkdir -p "$DIRECTORY"
