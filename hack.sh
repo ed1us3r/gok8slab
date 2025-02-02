@@ -1,9 +1,17 @@
-#!/bin/env bash
+#!/bin/bash
 
 DIRECTORY="gok8slab"
 LATEST_RELEASE_URL="https://api.github.com/repos/ed1us3r/gok8slab/releases/latest"
-ZIP_FILE="gok8slab-latest.tar.gz"
 BINARY_NAME="gok8slab"
+
+# Detect system architecture
+ARCH=$(uname -m)
+case "$ARCH" in
+    x86_64) ARCH="amd64" ;;
+    aarch64) ARCH="arm64" ;;
+    armv7l) ARCH="arm" ;;
+    *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
+esac
 
 # Check for --install flag
 INSTALL=false
@@ -11,11 +19,11 @@ if [[ "$1" == "--install" ]]; then
     INSTALL=true
 fi
 
-# Fetch the latest release download URL
-REPO_URL=$(curl -s $LATEST_RELEASE_URL | grep "browser_download_url" | grep "zip" | cut -d '"' -f 4)
+# Fetch the latest release version
+tarball_url=$(curl -s $LATEST_RELEASE_URL | grep "browser_download_url" | grep "linux-$ARCH.tar.gz" | cut -d '"' -f 4)
 
-if [[ -z "$REPO_URL" ]]; then
-    echo "Failed to fetch the latest release URL. Exiting."
+if [[ -z "$tarball_url" ]]; then
+    echo "Failed to fetch the latest release tarball. Exiting."
     exit 1
 fi
 
@@ -35,13 +43,13 @@ if $INSTALL; then
     fi
 
     mkdir -p "$INSTALL_DIR"
-    wget -q --show-progress "$REPO_URL" -O "$BINARY_NAME.zip"
-    if ! command -v unzip &> /dev/null; then
-        echo "Error: unzip command not found. Please install unzip and try again."
+    wget -q --show-progress "$tarball_url" -O "$BINARY_NAME.tar.gz"
+    if ! command -v tar &> /dev/null; then
+        echo "Error: tar command not found. Please install tar and try again."
         exit 1
     fi
-    unzip -q "$BINARY_NAME.zip"
-    rm "$BINARY_NAME.zip"
+    tar -xzf "$BINARY_NAME.tar.gz"
+    rm "$BINARY_NAME.tar.gz"
     if [[ ! -f "$BINARY_NAME" ]]; then
         echo "Error: Extracted binary not found. Installation failed."
         exit 1
@@ -66,16 +74,16 @@ mkdir -p "$DIRECTORY"
 cd "$DIRECTORY" || exit
 
 # Download the source code as a zip file
-wget -q --show-progress "$REPO_URL" -O "$ZIP_FILE"
+wget -q --show-progress "$tarball_url" -O "$BINARY_NAME.tar.gz"
 
-if ! command -v unzip &> /dev/null; then
-    echo "Error: unzip command not found. Please install unzip and try again."
+if ! command -v tar &> /dev/null; then
+    echo "Error: tar command not found. Please install tar and try again."
     exit 1
 fi
 
-# Unzip the file
-unzip -q "$ZIP_FILE"
-rm "$ZIP_FILE"
+# Extract the file
+tar -xzf "$BINARY_NAME.tar.gz"
+rm "$BINARY_NAME.tar.gz"
 
 # Display help text with README and compile instructions
 if [[ -f "README.md" ]]; then
