@@ -2,7 +2,7 @@
 
 DIRECTORY="gok8slab"
 LATEST_RELEASE_URL="https://api.github.com/repos/ed1us3r/gok8slab/releases/latest"
-ZIP_FILE="gok8slab-latest.zip"
+ZIP_FILE="gok8slab-latest.tar.gz"
 BINARY_NAME="gok8slab"
 
 # Check for --install flag
