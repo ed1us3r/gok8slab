@@ -22,7 +22,7 @@ fi
 if $INSTALL; then
     # Determine the best installation directory
     for DIR in "$HOME/bin" "$HOME/.local/bin" "/usr/local/bin"; do
-        if [[ ":$PATH:" == *":$DIR:"* ]]; then
+        if [[ -d "$DIR" && ":$PATH:" == *":$DIR:"* ]]; then
             INSTALL_DIR="$DIR"
             break
         fi
@@ -36,8 +36,16 @@ if $INSTALL; then
 
     mkdir -p "$INSTALL_DIR"
     wget -q --show-progress "$REPO_URL" -O "$BINARY_NAME.zip"
+    if ! command -v unzip &> /dev/null; then
+        echo "Error: unzip command not found. Please install unzip and try again."
+        exit 1
+    fi
     unzip -q "$BINARY_NAME.zip"
     rm "$BINARY_NAME.zip"
+    if [[ ! -f "$BINARY_NAME" ]]; then
+        echo "Error: Extracted binary not found. Installation failed."
+        exit 1
+    fi
     mv "$BINARY_NAME" "$INSTALL_DIR/"
     chmod +x "$INSTALL_DIR/$BINARY_NAME"
     echo "Binary installed at $INSTALL_DIR/$BINARY_NAME"
@@ -60,6 +68,11 @@ cd "$DIRECTORY" || exit
 # Download the source code as a zip file
 wget -q --show-progress "$REPO_URL" -O "$ZIP_FILE"
 
+if ! command -v unzip &> /dev/null; then
+    echo "Error: unzip command not found. Please install unzip and try again."
+    exit 1
+fi
+
 # Unzip the file
 unzip -q "$ZIP_FILE"
 rm "$ZIP_FILE"
@@ -78,4 +91,14 @@ echo -e "\nTo compile the binary locally, run the following commands:"
 echo "cd $DIRECTORY"
 echo "make build  # If a Makefile exists, otherwise use 'go build .'"
 echo "./gok8slab  # To execute the compiled binary"
+
+# Markdown snippet for downloading and executing the script
+echo -e "\n### Quick Install Command\n"
+echo -e "\
+```sh\
+"
+echo -e "curl -sL https://raw.githubusercontent.com/yourrepo/hack.sh | bash -s -- --install\
+"
+echo -e "```\
+"
 
