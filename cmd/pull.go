@@ -3,6 +3,7 @@ package cmd
 import (
 	"gok8slab/internal/git"
 	"gok8slab/internal/utils"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -27,7 +28,7 @@ var pullCmd = &cobra.Command{
 			return
 		}
 
-		err := git.PullCourses(repoURL, "courses")
+		err := git.PullCourses(repoURL, "/tmp/gok8slab/courses/")
 		if err != nil {
 			utils.Error("Error pulling courses: " + err.Error())
 			return
@@ -40,4 +41,3 @@ var pullCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(pullCmd)
 }
-
