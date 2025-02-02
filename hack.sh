@@ -48,7 +48,11 @@ if $INSTALL; then
         echo "Error: tar command not found. Please install tar and try again."
         exit 1
     fi
-    tar -xzf "$BINARY_NAME.tar.gz"
+    if ! tar -xzf "$BINARY_NAME.tar.gz"; then
+        echo "Error: Failed to extract tarball. It may be corrupt."
+        rm "$BINARY_NAME.tar.gz"
+        exit 1
+    fi
     rm "$BINARY_NAME.tar.gz"
     if [[ ! -f "$BINARY_NAME" ]]; then
         echo "Error: Extracted binary not found. Installation failed."
@@ -60,8 +64,16 @@ if $INSTALL; then
     exit 0
 fi
 
-# Ask for user permission
-echo "This script will create a directory called '$DIRECTORY' and download the latest source code."
+# Skip user prompt if running in a non-interactive shell
+if [[ -t 0 ]]; then
+    echo "This script will create a directory called '$DIRECTORY' and download the latest source code. Continue? (y/n)"
+    read -r RESPONSE
+
+    if [[ "$RESPONSE" != "y" ]]; then
+        echo "Operation canceled."
+        exit 1
+    fi
+fi
 
 # Create the directory
 mkdir -p "$DIRECTORY"
@@ -76,7 +88,11 @@ if ! command -v tar &> /dev/null; then
 fi
 
 # Extract the file
-tar -xzf "$BINARY_NAME.tar.gz"
+if ! tar -xzf "$BINARY_NAME.tar.gz"; then
+    echo "Error: Failed to extract tarball. It may be corrupt."
+    rm "$BINARY_NAME.tar.gz"
+    exit 1
+fi
 rm "$BINARY_NAME.tar.gz"
 
 # Display help text with README and compile instructions
