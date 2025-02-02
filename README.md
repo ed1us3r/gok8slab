@@ -33,6 +33,10 @@ gok8slab/
 - Logging and tracing capabilities.
 - Dynamically updates bash/shell prompts with current lab information.
 
+## Quickstart
+
+`curl -sL https://raw.githubusercontent.com/ed1us3r/gok8slab/refs/heads/main/hack.sh | bash -s -- --install`
+
 ## Usage
 
 ```bash
