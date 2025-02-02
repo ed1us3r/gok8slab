@@ -2,14 +2,18 @@ package git
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 )
 
-const defaultRepo = "https://github.com/ed1us3r/gok8slab.git"
-const repoDir = "gok8slab-repo"
-const courseSubDir = "courses"
+// Constants
+const (
+	defaultRepo  = "https://github.com/ed1us3r/gok8slab.git"
+	repoDir      = "gok8slab-repo"
+	courseSubDir = "courses"
+)
 
 // PullCourses syncs courses from a GitHub repository
 func PullCourses(repoURL, targetDir string) error {
@@ -17,24 +21,13 @@ func PullCourses(repoURL, targetDir string) error {
 		repoURL = defaultRepo // Use default if none provided
 	}
 
-	// Check if repo already exists
-	if _, err := os.Stat(repoDir); os.IsNotExist(err) {
-		fmt.Println("📂 Cloning repository for the first time...")
-		err := cloneRepo(repoURL, repoDir)
-		if err != nil {
-			return err
-		}
-	} else {
-		fmt.Println("🔄 Updating existing repository...")
-		err := pullRepo(repoDir)
-		if err != nil {
-			return err
-		}
+	if err := syncRepo(repoURL); err != nil {
+		return err
 	}
 
-	// Copy latest courses from the cloned repo
-	err := copyCourses(filepath.Join(repoDir, courseSubDir), targetDir)
-	if err != nil {
+	// Copy the latest courses from the cloned repo
+	coursesSrcDir := filepath.Join(repoDir, courseSubDir)
+	if err := copyCourses(coursesSrcDir, targetDir); err != nil {
 		return err
 	}
 
@@ -42,12 +35,23 @@ func PullCourses(repoURL, targetDir string) error {
 	return nil
 }
 
+// syncRepo handles cloning or pulling the repository
+func syncRepo(repoURL string) error {
+	if _, err := os.Stat(repoDir); os.IsNotExist(err) {
+		fmt.Println("📂 Cloning repository for the first time...")
+		return cloneRepo(repoURL, repoDir)
+	} else {
+		fmt.Println("🔄 Updating existing repository...")
+		return pullRepo(repoDir)
+	}
+}
+
 // Clone full repository
 func cloneRepo(repoURL, targetDir string) error {
 	cmd := exec.Command("git", "clone", repoURL, targetDir)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("❌ Clone failed:", string(output))
+		fmt.Printf("❌ Clone failed: %s\n", output)
 		return err
 	}
 	fmt.Println("✅ Repository cloned successfully.")
@@ -59,7 +63,7 @@ func pullRepo(targetDir string) error {
 	cmd := exec.Command("git", "-C", targetDir, "pull")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("❌ Pull failed:", string(output))
+		fmt.Printf("❌ Pull failed: %s\n", output)
 		return err
 	}
 	fmt.Println("✅ Repository updated.")
@@ -68,25 +72,83 @@ func pullRepo(targetDir string) error {
 
 // Copy courses from cloned repo to target directory
 func copyCourses(srcDir, targetDir string) error {
-	if _, err := os.Stat(srcDir); os.IsNotExist(err) {
-		return fmt.Errorf("❌ Course directory not found in repo")
-	}
-
-	// Ensure target directory exists
-	err := os.MkdirAll(targetDir, os.ModePerm)
-	if err != nil {
+	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 		return err
 	}
 
-	// Copy files using system `cp` (faster than Go's file copying)
-	cmd := exec.Command("cp", "-r", srcDir+"/.", targetDir)
-	output, err := cmd.CombinedOutput()
+	entries, err := ioutil.ReadDir(srcDir)
 	if err != nil {
-		fmt.Println("❌ Failed to copy courses:", string(output))
-		return err
+		return fmt.Errorf("❌ Failed to read course directory: %v", err)
 	}
 
-	fmt.Println("✅ Courses copied to:", targetDir)
+	for _, entry := range entries {
+		if entry.IsDir() {
+			if err := copyCourseFiles(filepath.Join(srcDir, entry.Name()), targetDir, entry.Name()); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
+// Copies course files and Kubernetes manifests associated with the course
+func copyCourseFiles(courseDir, targetDir, courseName string) error {
+	courseFiles, err := ioutil.ReadDir(courseDir)
+	if err != nil {
+		return fmt.Errorf("❌ Failed to read course folder: %v", err)
+	}
+
+	for _, courseFile := range courseFiles {
+		srcPath := filepath.Join(courseDir, courseFile.Name())
+		dstPath := filepath.Join(targetDir, courseFile.Name())
+
+		if filepath.Ext(courseFile.Name()) == ".yaml" {
+			// If it's a YAML file, copy it
+			if err := copyFile(srcPath, dstPath); err != nil {
+				return err
+			}
+		} else if courseFile.IsDir() {
+			// Handle Kubernetes manifests directory
+			if err := copyKubernetesManifests(srcPath, targetDir, courseName); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// Copy a single file
+func copyFile(src, dst string) error {
+	input, err := ioutil.ReadFile(src)
+	if err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(dst, input, os.ModePerm); err != nil {
+		return err
+	}
+	fmt.Println("✅ Copied file:", dst)
+	return nil
+}
+
+// Copy Kubernetes manifests from a directory
+func copyKubernetesManifests(srcDir, targetDir, courseName string) error {
+	manifestsDir := filepath.Join(srcDir, courseName) // Assuming manifest folder mirrors course name
+	if _, err := os.Stat(manifestsDir); err != nil {
+		return nil // Skip if the directory doesn't exist
+	}
+
+	files, err := ioutil.ReadDir(manifestsDir)
+	if err != nil {
+		return fmt.Errorf("❌ Failed to read Kubernetes manifests directory: %v", err)
+	}
+
+	for _, file := range files {
+		if filepath.Ext(file.Name()) == ".yaml" {
+			err := copyFile(filepath.Join(manifestsDir, file.Name()), filepath.Join(targetDir, file.Name()))
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}

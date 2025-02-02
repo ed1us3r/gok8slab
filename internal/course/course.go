@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"os"
-	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
@@ -50,20 +49,22 @@ func ValidateFlag(coursePath, userFlag string) (bool, error) {
 	return userFlagHash == course.FlagHash, nil
 }
 
-// ListCourses scans the `/courses` directory
+// ListCourses scans the `/courses` directory and returns only course directories.
 func ListCourses(dirPath string) ([]string, error) {
 	var courses []string
 
+	// Read the contents of the directory
 	files, err := os.ReadDir(dirPath)
 	if err != nil {
 		return nil, err
 	}
 
+	// Loop through each entry in the directory
 	for _, file := range files {
-		if filepath.Ext(file.Name()) == ".yaml" {
+		// Check if the entry is a directory
+		if file.IsDir() {
 			courses = append(courses, file.Name())
 		}
 	}
 	return courses, nil
 }
-
