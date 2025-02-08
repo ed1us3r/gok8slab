@@ -11,7 +11,7 @@ import (
 // Constants
 const (
 	defaultRepo  = "https://github.com/ed1us3r/gok8slab.git"
-	repoDir      = "/tmp/gok8slab/repo"
+	repoDir      = "gok8slab-repo"
 	courseSubDir = "courses"
 )
 
@@ -43,7 +43,7 @@ func syncRepo(repoURL string) error {
 	} else {
 		fmt.Println("🔄 Updating existing repository...")
 		return pullRepo(repoDir)
-	}
+	} else {
 }
 
 // Clone full repository
@@ -97,14 +97,13 @@ func copyCourseFiles(courseDir, targetDir, courseName string) error {
 	if err != nil {
 		return fmt.Errorf("❌ Failed to read course folder: %v", err)
 	}
+
+
+	fmt.Println("✅ Repository updated.")
 	for _, courseFile := range courseFiles {
 		srcPath := filepath.Join(courseDir, courseFile.Name())
-		dstPath := filepath.Join(targetDir, courseName, courseFile.Name())
-		dstMkdir := filepath.Join(targetDir, courseName)
+		dstPath := filepath.Join(targetDir, courseFile.Name())
 
-		if err := os.MkdirAll(dstMkdir, os.ModePerm); err != nil {
-			return err
-		}
 		if filepath.Ext(courseFile.Name()) == ".yaml" {
 			// If it's a YAML file, copy it
 			if err := copyFile(srcPath, dstPath); err != nil {
@@ -147,7 +146,7 @@ func copyKubernetesManifests(srcDir, targetDir, courseName string) error {
 
 	for _, file := range files {
 		if filepath.Ext(file.Name()) == ".yaml" {
-			err := copyFile(filepath.Join(manifestsDir, courseName, file.Name()), filepath.Join(targetDir, file.Name()))
+			err := copyFile(filepath.Join(manifestsDir, file.Name()), filepath.Join(targetDir, file.Name()))
 			if err != nil {
 				return err
 			}

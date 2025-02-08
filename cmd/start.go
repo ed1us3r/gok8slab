@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"path/filepath"
-
 	"gok8slab/internal/course"
 	"gok8slab/internal/k8s"
+	"path/filepath"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -15,7 +15,7 @@ var startCmd = &cobra.Command{
 	Short: "Start a Kubernetes learning course",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		coursePath := filepath.Join("courses", args[0])
+		coursePath := filepath.Join("/tmp/gok8slab/courses", args[0], args[0])
 
 		courseData, err := course.LoadCourse(coursePath)
 		if err != nil {
@@ -40,4 +40,3 @@ var startCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(startCmd)
 }
-

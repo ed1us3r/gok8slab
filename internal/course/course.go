@@ -3,6 +3,7 @@ package course
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -21,6 +22,7 @@ type Course struct {
 
 // LoadCourse reads a YAML file and parses the course
 func LoadCourse(coursePath string) (*Course, error) {
+	coursePath = fmt.Sprintf("%s.yaml", coursePath)
 	data, err := os.ReadFile(coursePath)
 	if err != nil {
 		return nil, err
