@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Constants
@@ -28,6 +30,7 @@ func PullCourses(repoURL, targetDir string) error {
 
 	// Copy the latest courses from the cloned repo
 	coursesSrcDir := filepath.Join(repoDir, courseSubDir)
+
 	if err := copyCourses(coursesSrcDir, targetDir); err != nil {
 		return err
 	}
@@ -105,13 +108,18 @@ func copyCourseFiles(courseDir, targetDir, courseName string) error {
 		utils.Error("❌ Failed to read course folder: ")
 		return fmt.Errorf("[Error] %v", err)
 	}
+	targetCourseDir := filepath.Join(courseDir, courseName)
+	logrus.Debugf("Mkdir: %s", targetCourseDir)
+	if err := os.MkdirAll(targetCourseDir, os.ModePerm); err != nil {
+		return err
+	}
 
 	utils.Info("💤 Updating and copying Course Files...")
 	utils.Info("💤 Currently Loading Course: " + courseName)
 	for _, courseFile := range courseFiles {
 		srcPath := filepath.Join(courseDir, courseFile.Name())
-		dstPath := filepath.Join(targetDir, courseFile.Name())
-
+		dstPath := filepath.Join(targetDir, courseName, courseFile.Name())
+		logrus.Debugf("Moving Files: %s -> %s", srcPath, dstPath)
 		if filepath.Ext(courseFile.Name()) == ".yaml" {
 			// If it's a YAML file, copy it
 			if err := copyFile(srcPath, dstPath); err != nil {

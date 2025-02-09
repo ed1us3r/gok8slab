@@ -13,7 +13,9 @@ var listCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		courses, err := course.ListCourses("/tmp/gok8slab/courses")
 		if err != nil {
+
 			fmt.Println("Error listing courses:", err)
+			fmt.Println("Try: gok8slab pull")
 			return
 		}
 
