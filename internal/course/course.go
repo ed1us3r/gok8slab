@@ -114,7 +114,8 @@ func GetCurrentCourse(dirPath string) (string, error) {
 // ListCourses scans the `/courses` directory and returns only course directories.
 func ListCourses(dirPath string) ([]string, error) {
 	var courses []string
-	logrus.Debug("Walking through Directory:", courses)
+	
+	logrus.Debug("Walking through Folder:", dirPath)
 	// Read the contents of the directory
 	files, err := os.ReadDir(dirPath)
 	if err != nil {
@@ -125,8 +126,7 @@ func ListCourses(dirPath string) ([]string, error) {
 	for _, file := range files {
 		// Check if the entry is a directory
 		if file.IsDir() {
-
-			logrus.Debug("Walking through File:", file.Name())
+			logrus.Debug(">> Found Subfolder: ", file.Name())
 			courses = append(courses, file.Name())
 		}
 	}

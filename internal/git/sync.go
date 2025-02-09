@@ -120,6 +120,11 @@ func copyCourseFiles(courseDir, targetDir, courseName string) error {
 		srcPath := filepath.Join(courseDir, courseFile.Name())
 		dstPath := filepath.Join(targetDir, courseName, courseFile.Name())
 		logrus.Debugf("Moving Files: %s -> %s", srcPath, dstPath)
+		dstMkdir := filepath.Join(targetDir, courseName)
+
+		if err := os.MkdirAll(dstMkdir, os.ModePerm); err != nil {
+			return err
+		}
 		if filepath.Ext(courseFile.Name()) == ".yaml" {
 			// If it's a YAML file, copy it
 			if err := copyFile(srcPath, dstPath); err != nil {
