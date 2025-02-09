@@ -14,7 +14,7 @@ const (
 
 // Colorized output helpers
 func Info(msg string) {
-	fmt.Println(Blue + "🟦 [INFO] " + msg + Reset)
+	fmt.Println(Blue + "🟦 [INFO]    " + msg + Reset)
 }
 
 func Success(msg string) {
@@ -22,9 +22,9 @@ func Success(msg string) {
 }
 
 func Warning(msg string) {
-	fmt.Println(Yellow + "⚠️ [WARNING] " + msg + Reset)
+	fmt.Println(Yellow + "⚠️ [WARNING]  " + msg + Reset)
 }
 
 func Error(msg string) {
-	fmt.Println(Red + "⛔[ERROR] " + msg + Reset)
+	fmt.Println(Red + "⛔[ERROR]    " + msg + Reset)
 }

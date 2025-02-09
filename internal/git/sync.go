@@ -2,6 +2,7 @@ package git
 
 import (
 	"fmt"
+	"gok8slab/internal/utils"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -31,19 +32,19 @@ func PullCourses(repoURL, targetDir string) error {
 		return err
 	}
 
-	fmt.Println("✅ Courses updated successfully.")
+	utils.Success("✅ Courses updated successfully.")
 	return nil
 }
 
 // syncRepo handles cloning or pulling the repository
 func syncRepo(repoURL string) error {
 	if _, err := os.Stat(repoDir); os.IsNotExist(err) {
-		fmt.Println("📂 Cloning repository for the first time...")
+		utils.Info("📂 Cloning repository for the first time...")
 		return cloneRepo(repoURL, repoDir)
 	} else {
-		fmt.Println("🔄 Updating existing repository...")
+		utils.Info("🔄 Updating existing repository...")
 		return pullRepo(repoDir)
-	} else {
+	}
 }
 
 // Clone full repository
@@ -51,10 +52,12 @@ func cloneRepo(repoURL, targetDir string) error {
 	cmd := exec.Command("git", "clone", repoURL, targetDir)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("❌ Clone failed: %s\n", output)
+		utils.Error("❌ Clone failed: \n")
+		fmt.Printf("[Error] %s ", output)
+
 		return err
 	}
-	fmt.Println("✅ Repository cloned successfully.")
+	utils.Success("✅ Repository cloned successfully.")
 	return nil
 }
 
@@ -63,10 +66,12 @@ func pullRepo(targetDir string) error {
 	cmd := exec.Command("git", "-C", targetDir, "pull")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("❌ Pull failed: %s\n", output)
+		utils.Error("❌ Pull failed: \n")
+
+		fmt.Printf("[Error] %v", output)
 		return err
 	}
-	fmt.Println("✅ Repository updated.")
+	utils.Success("✅ Repository updated.")
 	return nil
 }
 
@@ -78,7 +83,9 @@ func copyCourses(srcDir, targetDir string) error {
 
 	entries, err := ioutil.ReadDir(srcDir)
 	if err != nil {
-		return fmt.Errorf("❌ Failed to read course directory: %v", err)
+		utils.Error("❌ Failed to Access the Course directory: \n")
+
+		return fmt.Errorf("[Error] %v", err)
 	}
 
 	for _, entry := range entries {
@@ -95,11 +102,12 @@ func copyCourses(srcDir, targetDir string) error {
 func copyCourseFiles(courseDir, targetDir, courseName string) error {
 	courseFiles, err := ioutil.ReadDir(courseDir)
 	if err != nil {
-		return fmt.Errorf("❌ Failed to read course folder: %v", err)
+		utils.Error("❌ Failed to read course folder: ")
+		return fmt.Errorf("[Error] %v", err)
 	}
 
-
-	fmt.Println("✅ Repository updated.")
+	utils.Info("💤 Updating and copying Course Files...")
+	utils.Info("💤 Currently Loading Course: " + courseName)
 	for _, courseFile := range courseFiles {
 		srcPath := filepath.Join(courseDir, courseFile.Name())
 		dstPath := filepath.Join(targetDir, courseFile.Name())
@@ -116,6 +124,8 @@ func copyCourseFiles(courseDir, targetDir, courseName string) error {
 			}
 		}
 	}
+
+	utils.Success("Fully loaded Course: " + courseName)
 	return nil
 }
 
@@ -128,7 +138,7 @@ func copyFile(src, dst string) error {
 	if err := ioutil.WriteFile(dst, input, os.ModePerm); err != nil {
 		return err
 	}
-	fmt.Println("✅ Copied file:", dst)
+	utils.Info("   ✅ Copied file:" + dst)
 	return nil
 }
 
@@ -141,6 +151,7 @@ func copyKubernetesManifests(srcDir, targetDir, courseName string) error {
 
 	files, err := ioutil.ReadDir(manifestsDir)
 	if err != nil {
+		utils.Error("❌ Failed to read Kubernetes manifests directory")
 		return fmt.Errorf("❌ Failed to read Kubernetes manifests directory: %v", err)
 	}
 
