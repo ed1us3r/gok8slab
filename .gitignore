@@ -21,6 +21,8 @@ gok8slab
 gok8slab-repo/*
 gok8slab-repo
 
+# debugging/compiling
+dev.sh
 
 # Go workspace file
 go.work

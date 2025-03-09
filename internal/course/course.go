@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"gok8slab/internal/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -23,6 +24,7 @@ type Course struct {
 	FlagHash    string   `yaml:"flag_hash"`
 
 	Status bool
+	Solved bool
 }
 
 // SetCourse marks a course as currently loaded.
@@ -101,20 +103,28 @@ func GetCourse(dirPath string) ([]string, error) {
 }
 
 // GetCurrentCourse retrieves the currently loaded course based on the course.lock file.
-func GetCurrentCourse(dirPath string) (string, error) {
+func GetCurrentCourse(dirPath string) (*Course, error) {
 	lockFilePath := filepath.Join(dirPath, "course.lock")
-	data, err := ioutil.ReadFile(lockFilePath)
+	data, err := os.ReadFile(lockFilePath)
 	if err != nil {
-		return "", fmt.Errorf("failed to read course.lock file: %w", err)
+		fmt.Errorf("We could not detect a cource.lock File at the Course-Directory: %w", dirPath)
+		logrus.Debug("It seems like there was never a course started yet. Make sure to run one first.")
+		return nil, fmt.Errorf("failed to read course.lock file: %w", err)
+	}
+	var course Course
+	logrus.Debug("Loaded Course:", course)
+	err = yaml.Unmarshal(data, &course)
+	if err != nil {
+		return nil, err
 	}
 
-	return string(data), nil
+	return &course, nil
 }
 
 // ListCourses scans the `/courses` directory and returns only course directories.
 func ListCourses(dirPath string) ([]string, error) {
 	var courses []string
-	
+
 	logrus.Debug("Walking through Folder:", dirPath)
 	// Read the contents of the directory
 	files, err := os.ReadDir(dirPath)
@@ -131,4 +141,40 @@ func ListCourses(dirPath string) ([]string, error) {
 		}
 	}
 	return courses, nil
+}
+
+// printStatus prints out the current lab status together with the current course Informations
+func PrintStatus(course *Course, error error) {
+	logrus.Debug("Generating Status badge")
+	statusText := "❌ FAILED"
+	if error != nil {
+
+		if course.Status {
+			statusText = "✅ COMPLETED"
+		}
+
+		solvedText := "❌ Not Solved"
+		if course.Solved {
+			solvedText = "✅ Solved"
+		}
+
+		border := "##############################################"
+		fmt.Println(border)
+		fmt.Printf("#  📚 Course:     %s\n", course.Name)
+		fmt.Printf("#  🏷  Namespace:  %s\n", course.Namespace)
+		fmt.Printf("#  📝 Description: %s\n", course.Description)
+		fmt.Printf("#  📜 Guidelines:  %s\n", course.Guidelines)
+		fmt.Printf("#  💡 Hint:        %s\n", course.Hint)
+		fmt.Printf("#  📂 Manifests:   %v\n", course.Manifests)
+		fmt.Printf("#  🔑 Flag Hash:   %s\n", course.FlagHash)
+		fmt.Printf("#  🚀 Status:      %s\n", statusText)
+		fmt.Printf("#  🎯 Solved:      %s\n", solvedText)
+		fmt.Println(border)
+	} else {
+		border := "##############################################"
+
+		utils.Error(border)
+		utils.Error("Currently no Course Started or something else went Wrong")
+		utils.Error(border)
+	}
 }
