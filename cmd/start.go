@@ -32,7 +32,7 @@ var startCmd = &cobra.Command{
 			fmt.Println("Failed to start course:", err)
 			return
 		}
-
+		course.SetCourse(coursePath)
 		fmt.Println("Course deployed successfully.")
 	},
 }

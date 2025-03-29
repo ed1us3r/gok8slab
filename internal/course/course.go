@@ -13,6 +13,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const coursePath string = "/tmp/gok8slab/courses/"
+
 // Course struct
 type Course struct {
 	Name        string   `yaml:"name"`
@@ -29,24 +31,43 @@ type Course struct {
 
 // SetCourse marks a course as currently loaded.
 func SetCourse(coursePath string) (*Course, error) {
-	courseFile := fmt.Sprintf("%s.yaml", coursePath)
+	// Extract the course directory name (e.g., "000-debug" from "path/to/000-debug/")
+	courseName := filepath.Base(coursePath)
 
+	// Preferred YAML file: <coursePath>/<courseName>.yaml
+	preferredFile := filepath.Join(coursePath, courseName+".yaml")
+
+	// Fallback YAML file: <coursePath>/course.yaml
+	fallbackFile := filepath.Join(coursePath, "course.yaml")
+
+	var courseFile string
+	if _, err := os.Stat(preferredFile); err == nil {
+		courseFile = preferredFile
+	} else if _, err := os.Stat(fallbackFile); err == nil {
+		courseFile = fallbackFile
+	} else {
+		return nil, fmt.Errorf("no valid course file found in %s", coursePath)
+	}
+
+	// Read the determined course YAML file
 	data, err := ioutil.ReadFile(courseFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read course file: %w", err)
 	}
 
+	// Parse YAML into Course struct
 	var course Course
 	if err := yaml.Unmarshal(data, &course); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal YAML: %w", err)
 	}
 
 	// Create a course.lock file in the coursePath directory
-	lockFilePath := filepath.Join(filepath.Dir(coursePath), "course.lock")
+	lockFilePath := filepath.Join(coursePath, "course.lock")
 	if err := ioutil.WriteFile(lockFilePath, []byte(courseFile), 0644); err != nil {
 		return nil, fmt.Errorf("failed to create lock file: %w", err)
 	}
 
+	logrus.Debugf("Course %s is now set as currently loaded (file: %s)", courseName, courseFile)
 	return &course, nil
 }
 
@@ -103,28 +124,57 @@ func GetCourse(dirPath string) ([]string, error) {
 }
 
 // GetCurrentCourse retrieves the currently loaded course based on the course.lock file.
-func GetCurrentCourse(dirPath string) (*Course, error) {
-	lockFilePath := filepath.Join(dirPath, "course.lock")
-	data, err := os.ReadFile(lockFilePath)
-	if err != nil {
-		fmt.Errorf("We could not detect a cource.lock File at the Course-Directory: %w", dirPath)
-		logrus.Debug("It seems like there was never a course started yet. Make sure to run one first.")
-		return nil, fmt.Errorf("failed to read course.lock file: %w", err)
+func GetCurrentCourse() (*Course, error) {
+	fileName := "course.lock"
+	dirPath := coursePath
+	var lockFilePath string
+
+	// Walk through the directory to find course.lock
+	err := filepath.WalkDir(dirPath, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.Name() == fileName {
+			lockFilePath = path
+			return fmt.Errorf("found") // Custom error to break out
+		}
+		return nil
+	})
+
+	// If lockFilePath is empty, course.lock was not found
+	if lockFilePath == "" {
+		logrus.Debug("No course.lock file found. It seems like there was never a course started yet.")
+		return nil, fmt.Errorf("could not find %s in directory %s", fileName, dirPath)
 	}
+
+	// Determine the course directory
+	courseDir := filepath.Dir(lockFilePath)
+	courseName := filepath.Base(courseDir) // Extract directory name
+
+	// Construct YAML file path (e.g., "000-debug/000-debug.yaml")
+	yamlFilePath := filepath.Join(courseDir, courseName+".yaml")
+
+	// Read the YAML file
+	data, err := os.ReadFile(yamlFilePath)
+	if err != nil {
+		logrus.Debugf("Failed to read course YAML file at: %s", yamlFilePath)
+		return nil, fmt.Errorf("failed to read course YAML file: %w", err)
+	}
+
+	// Parse YAML into Course struct
 	var course Course
-	logrus.Debug("Loaded Course:", course)
 	err = yaml.Unmarshal(data, &course)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse YAML: %w", err)
 	}
 
 	return &course, nil
 }
 
 // ListCourses scans the `/courses` directory and returns only course directories.
-func ListCourses(dirPath string) ([]string, error) {
+func ListCourses() ([]string, error) {
 	var courses []string
-
+	dirPath := coursePath
 	logrus.Debug("Walking through Folder:", dirPath)
 	// Read the contents of the directory
 	files, err := os.ReadDir(dirPath)
@@ -146,14 +196,14 @@ func ListCourses(dirPath string) ([]string, error) {
 // printStatus prints out the current lab status together with the current course Informations
 func PrintStatus(course *Course, error error) {
 	logrus.Debug("Generating Status badge")
-	statusText := "❌ FAILED"
-	if error != nil {
+	statusText := "❌ No Status"
+	if error == nil {
 
 		if course.Status {
 			statusText = "✅ COMPLETED"
 		}
 
-		solvedText := "❌ Not Solved"
+		solvedText := "❌ Not Solved yet"
 		if course.Solved {
 			solvedText = "✅ Solved"
 		}

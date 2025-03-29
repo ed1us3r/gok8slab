@@ -11,7 +11,7 @@ var statusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Retrieve Status Information about the lab Status.",
 	Run: func(cmd *cobra.Command, args []string) {
-		courses, err := course.ListCourses("/tmp/gok8slab/courses")
+		courses, err := course.ListCourses()
 		if err != nil {
 
 			fmt.Println("Error Retrieving status of Lab:", err)
@@ -19,13 +19,13 @@ var statusCmd = &cobra.Command{
 			return
 		}
 
-		currentCourse, err := course.GetCurrentCourse("/tmp/gok8slab/courses")
+		currentCourse, err := course.GetCurrentCourse()
 		if err != nil {
 			fmt.Println("Error:", err)
 			return
 		}
 		course.PrintStatus(currentCourse, err)
-
+		fmt.Println("Other Available Courses:")
 		for _, c := range courses {
 			fmt.Println(" -", c)
 		}
